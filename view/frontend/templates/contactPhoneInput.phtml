@@ -10,18 +10,19 @@ $isEnabled = $block->isContactEnabled();
 $getDefualtCountry = $block->getDefualtCountry() ?: 'US';
 $getDetectByIp = $block->getDetectByIp();
 $getCustomerIPDetails = $block->getCustomerIPDetails();
-$country_flag = $block->getInitialCountry();
-if (!$country_flag) {
-    $country_flag = strtolower($getDetectByIp ? $getCustomerIPDetails : $getDefualtCountry);
+$country_flag = '';
+if ($getDetectByIp && $getCustomerIPDetails) {
+    $country_flag = strtolower((string)$getCustomerIPDetails);
 }
-if (!$country_flag) {
-    $country_flag = strtolower($getDefualtCountry ?: 'us');
+if (empty($country_flag) && $getDefualtCountry) {
+    $country_flag = strtolower((string)$getDefualtCountry);
+}
+if (empty($country_flag)) {
+    $country_flag = 'us';
 }
 
 $validationarray = $block->getMobileCountryValidation();
 $getUrlJs = $block->getViewFileUrl("Magecomp_Countryflag::js/utils.js");
-$pinnedCountriesJson = $block->getPinnedCountriesJson();
-$availableCountriesJson = $block->getAvailableCountriesJson();
 ?>
 
 <?php $scriptString = <<<script
@@ -87,11 +88,11 @@ require([
             return defaultDigit;
         }
 
-        // Initialize intlTelInput on the telephone input
+        // Initialize intlTelInput on the telephone input without pinned or blocked countries
         \$phone.intlTelInput({
             initialCountry: '{$country_flag}',
-            preferredCountries: {$pinnedCountriesJson},
-            onlyCountries: {$availableCountriesJson},
+            preferredCountries: [],
+            onlyCountries: [],
             separateDialCode: true,
             nationalMode: true,
             autoPlaceholder: 'aggressive',
