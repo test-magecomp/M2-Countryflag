@@ -3,11 +3,12 @@
 
     <route url="/V1/InternationalTelephone/getcountrycodedata/" method="GET">
         <service class="Magecomp\Countryflag\Api\FlagInterface" method="countrycollection"/>
-            <resources>
-                <resource ref="anonymous"/>
-            </resources>
+        <resources>
+            <resource ref="anonymous"/>
+        </resources>
     </route>
-       <route method="POST" url="/V1/countryflag/configvalue/">
+
+    <route method="POST" url="/V1/countryflag/configvalue/">
         <service class="Magecomp\Countryflag\Api\FlagInterface" method="getConfigvalue"/>
         <resources>
             <resource ref="anonymous"/>

@@ -45,4 +45,24 @@ class CountryItem extends DataObject implements CountryItemInterface
     {
         return $this->setData('imageUrl', $imageUrl);
     }
+
+    public function getIsPinned()
+    {
+        return (bool)$this->getData('isPinned');
+    }
+
+    public function setIsPinned($isPinned)
+    {
+        return $this->setData('isPinned', (bool)$isPinned);
+    }
+
+    public function getIsBlocked()
+    {
+        return (bool)$this->getData('isBlocked');
+    }
+
+    public function setIsBlocked($isBlocked)
+    {
+        return $this->setData('isBlocked', (bool)$isBlocked);
+    }
 }

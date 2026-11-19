@@ -46,4 +46,26 @@ interface CountryItemInterface
      * @return $this
      */
     public function setImageUrl($imageUrl);
+
+    /**
+     * @return bool|null
+     */
+    public function getIsPinned();
+
+    /**
+     * @param bool $isPinned
+     * @return $this
+     */
+    public function setIsPinned($isPinned);
+
+    /**
+     * @return bool|null
+     */
+    public function getIsBlocked();
+
+    /**
+     * @param bool $isBlocked
+     * @return $this
+     */
+    public function setIsBlocked($isBlocked);
 }
