@@ -1,0 +1,207 @@
+<?php
+/** @var \Magecomp\Countryflag\Block\IntPhoneInput $block */
+/** @var \Magento\Framework\View\Helper\SecureHtmlRenderer|null $secureRenderer */
+
+if (!$block->isContactEnabled()) {
+    return;
+}
+
+$isEnabled = $block->isContactEnabled();
+$getDefualtCountry = $block->getDefualtCountry() ?: 'US';
+$getDetectByIp = $block->getDetectByIp();
+$getCustomerIPDetails = $block->getCustomerIPDetails();
+$country_flag = $block->getInitialCountry();
+if (!$country_flag) {
+    $country_flag = strtolower($getDetectByIp ? $getCustomerIPDetails : $getDefualtCountry);
+}
+if (!$country_flag) {
+    $country_flag = strtolower($getDefualtCountry ?: 'us');
+}
+
+$validationarray = $block->getMobileCountryValidation();
+$getUrlJs = $block->getViewFileUrl("Magecomp_Countryflag::js/utils.js");
+$pinnedCountriesJson = $block->getPinnedCountriesJson();
+$availableCountriesJson = $block->getAvailableCountriesJson();
+?>
+
+<?php $scriptString = <<<script
+require([
+    'jquery',
+    'Magecomp_Countryflag/js/intlTelInput.min',
+    'jquery/validate',
+    'mage/validation'
+], function($) {
+    'use strict';
+
+    $(document).ready(function() {
+        var \$form = $('#contact-form');
+        if (!\$form.length) {
+            \$form = $('form.contact');
+        }
+        var \$phone = \$form.find('input[name="telephone"]');
+        if (!\$phone.length) {
+            \$phone = $('#telephone');
+        }
+        if (!\$phone.length) {
+            return;
+        }
+
+        if (\$phone.hasClass('iti-contact-initialized')) {
+            return;
+        }
+        \$phone.addClass('iti-contact-initialized');
+
+        // Add hidden fields for country code, ISO and full international telephone
+        if (!\$form.find('#contact_countrycode').length) {
+            \$form.append('<input type="hidden" name="countrycode" id="contact_countrycode" value="">');
+        }
+        if (!\$form.find('#contact_country_iso2').length) {
+            \$form.append('<input type="hidden" name="country_iso2" id="contact_country_iso2" value="">');
+        }
+        if (!\$form.find('#contact_telephone_full').length) {
+            \$form.append('<input type="hidden" name="telephone_full" id="contact_telephone_full" value="">');
+        }
+
+        var validationRules = [];
+        try {
+            validationRules = {$validationarray};
+        } catch (e) {
+            validationRules = [];
+        }
+
+        function getRequiredDigits(iso2) {
+            if (!iso2) return 10;
+            var iso = iso2.toUpperCase();
+            var defaultDigit = 10;
+            if (Array.isArray(validationRules)) {
+                for (var i = 0; i < validationRules.length; i++) {
+                    var rule = validationRules[i];
+                    if (rule.country && rule.country.toString().toUpperCase() === iso) {
+                        return parseInt(rule.digit, 10);
+                    }
+                    if (rule.country == 1 || rule.country === "1" || rule.country === "default") {
+                        defaultDigit = parseInt(rule.digit, 10);
+                    }
+                }
+            }
+            return defaultDigit;
+        }
+
+        // Initialize intlTelInput on the telephone input
+        \$phone.intlTelInput({
+            initialCountry: '{$country_flag}',
+            preferredCountries: {$pinnedCountriesJson},
+            onlyCountries: {$availableCountriesJson},
+            separateDialCode: true,
+            nationalMode: true,
+            autoPlaceholder: 'aggressive',
+            utilsScript: '{$getUrlJs}'
+        });
+
+        function syncCountryData() {
+            var countryData = \$phone.intlTelInput('getSelectedCountryData');
+            if (countryData) {
+                var dialCode = countryData.dialCode ? countryData.dialCode.toString() : '';
+                var iso2 = countryData.iso2 ? countryData.iso2.toString().toLowerCase() : '';
+                $('#contact_countrycode').val(dialCode);
+                $('#contact_country_iso2').val(iso2);
+
+                var reqDigits = getRequiredDigits(iso2);
+                if (reqDigits) {
+                    \$phone.attr('maxlength', reqDigits);
+                } else {
+                    \$phone.removeAttr('maxlength');
+                }
+            }
+            var fullNumber = \$phone.intlTelInput('getNumber');
+            $('#contact_telephone_full').val(fullNumber || '');
+        }
+
+        function repositionError() {
+            setTimeout(function() {
+                var \$error = \$form.find('#telephone-error, label[for="telephone"].mage-error, div[for="telephone"].mage-error');
+                if (\$error.length && \$phone.parent('.intl-tel-input').length) {
+                    \$error.insertAfter(\$phone.parent('.intl-tel-input'));
+                }
+            }, 10);
+        }
+
+        // Handle pre-filled telephone value if any
+        var currentVal = \$phone.val() ? \$phone.val().trim() : '';
+        if (currentVal !== '') {
+            \$phone.intlTelInput('setNumber', currentVal);
+        }
+        syncCountryData();
+
+        // On country flag change
+        \$phone.on('countrychange', function() {
+            syncCountryData();
+            if (\$phone.val() && \$phone.val().trim() !== '') {
+                \$phone.valid();
+                repositionError();
+            }
+        });
+
+        // On input / keyup / change
+        \$phone.on('keyup input change blur', function() {
+            syncCountryData();
+            repositionError();
+        });
+
+        // Custom Magento validation rule
+        $.validator.addMethod(
+            'validate-contact-telephone',
+            function(value, element) {
+                var clean = (value || '').trim();
+                if (clean === '') {
+                    return true;
+                }
+                if (!/^\d+$/.test(clean)) {
+                    return false;
+                }
+                var countryData = $(element).intlTelInput('getSelectedCountryData');
+                var iso2 = countryData ? countryData.iso2 : '';
+                var reqDigits = getRequiredDigits(iso2);
+                if (reqDigits && clean.length !== reqDigits) {
+                    return false;
+                }
+                return true;
+            },
+            function(params, element) {
+                var clean = ($(element).val() || '').trim();
+                if (clean !== '' && !/^\d+$/.test(clean)) {
+                    return $.mage.__('Please enter a valid mobile number.');
+                }
+                var countryData = $(element).intlTelInput('getSelectedCountryData');
+                var iso2 = countryData ? countryData.iso2 : '';
+                var reqDigits = getRequiredDigits(iso2);
+                if (reqDigits) {
+                    return $.mage.__('Your Mobile Number Must be %1 digit long without country code.').replace('%1', reqDigits);
+                }
+                return $.mage.__('Please enter a valid mobile number.');
+            }
+        );
+
+        \$phone.addClass('validate-contact-telephone');
+
+        // Form submit handler to ensure full international number is submitted
+        \$form.on('submit', function(e) {
+            syncCountryData();
+            var clean = \$phone.val() ? \$phone.val().trim() : '';
+            if (clean !== '') {
+                if (!\$phone.valid()) {
+                    repositionError();
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+    });
+});
+script;
+?>
+<?php if (isset($secureRenderer)): ?>
+    <?= /* @noEscape */ $secureRenderer->renderTag('script', [], $scriptString, false) ?>
+<?php else: ?>
+    <script><?= /* @noEscape */ $scriptString ?></script>
+<?php endif; ?>

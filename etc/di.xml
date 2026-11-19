@@ -1,0 +1,8 @@
+<?php ?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="Magecomp\Countryflag\Api\FlagInterface" type="Magecomp\Countryflag\Model\Api\Flag"/>
+    <preference for="Magecomp\Countryflag\Api\Data\CountryItemInterface" type="Magecomp\Countryflag\Model\Data\CountryItem"/>
+    <preference for="Magecomp\Countryflag\Api\Data\CountryPostDataInterface" type="Magecomp\Countryflag\Model\Data\CountryPostData"/>
+    <preference for="Magecomp\Countryflag\Api\Data\ConfigPostDataInterface" type="Magecomp\Countryflag\Model\Data\ConfigPostData"/>
+    <preference for="Magecomp\Countryflag\Api\Data\CountryValidationItemInterface" type="Magecomp\Countryflag\Model\Data\CountryValidationItem"/>
+</config>

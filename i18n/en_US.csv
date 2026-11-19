@@ -1,0 +1,29 @@
+Default,Default
+Digit,Digit
+Country,Country
+Add,Add
+"Your Mobile Number Must be %1 digit long without country code.","Your Mobile Number Must be %1 digit long without country code."
+"Enter Number Without Country code & without any sign. e.g:-(99xxxxxx09)","Enter Number Without Country code & without any sign. e.g:-(99xxxxxx09)"
+"For Order Updates.","For Order Updates."
+"'Error updating phone number: ' .","'Error updating phone number: ' ."
+"* Required Fields","* Required Fields"
+"Contact Information","Contact Information"
+Address,Address
+"Street Address %1","Street Address %1"
+City,City
+"Please select a region, state or province.","Please select a region, state or province."
+"It's a default billing address.","It's a default billing address."
+"Use as my default billing address","Use as my default billing address"
+"It's a default shipping address.","It's a default shipping address."
+"Use as my default shipping address","Use as my default shipping address"
+"Save Address","Save Address"
+"Go back","Go back"
+"This is a required field.","This is a required field."
+"Please, Enter Valid Mobile Number.","Please, Enter Valid Mobile Number."
+"Something went wrong, Try again later.","Something went wrong, Try again later."
+"International Telephone Input","International Telephone Input"
+Configuration,Configuration
+"Set country automatically","Set country automatically"
+"Using client IP address","Using client IP address"
+"Phone Number Digit Validation","Phone Number Digit Validation"
+"Country Digits","Country Digits"

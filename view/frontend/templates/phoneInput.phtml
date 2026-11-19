@@ -1,0 +1,483 @@
+<?php
+define('PHONE_INPUT_ELEMENT', 'input[name="telephone"]');
+$isEnabled = $block->isEnabled();
+$getDefualtCountry = $block->getDefualtCountry();
+$getDetectByIp = $block->getDetectByIp();
+$getIPaddress = $block->getCustomerIPAddress();
+$getCustomerIPDetails = $block->getCustomerIPDetails();
+$int_phone_input_element = PHONE_INPUT_ELEMENT;
+$getUrl = $block->getBaseUrl();
+$validationarray = $block->getMobileCountryValidation();
+$getUrlJs = $block->getViewFileUrl("Magecomp_Countryflag::js/utils.js");
+$pinnedCountriesJson = $block->getPinnedCountriesJson();
+$availableCountriesJson = $block->getAvailableCountriesJson();
+
+$country_flag = $block->getInitialCountry();
+if (!$country_flag) {
+    $country_flag = strtolower($getDetectByIp ? $getCustomerIPDetails : $getDefualtCountry);
+}
+if (!$country_flag) {
+    $country_flag = strtolower($getDefualtCountry ?: 'us');
+}
+$isFlagEnabledJs = $isEnabled ? 'true' : 'false';
+?>
+<input type="hidden" value="" id="mobilenumber" name="mobilenumber">
+<input type="hidden" value="<?= /* @noEscape */ $isEnabled; ?>" id="countryreg" name="countryreg">
+<input type="hidden" value="<?= /* @noEscape */ $isEnabled; ?>" id="isFlagEnable" name="isFlagEnable">
+
+<?php $scriptString = <<<script
+       require([
+            'jquery',
+            'Magecomp_Countryflag/js/intlTelInput.min'
+        ],
+        function($) {
+     
+            var int_phone_input_element = '{$int_phone_input_element}';
+            var validationarray = '{$validationarray}';
+            var getIPaddress = '{$getIPaddress}';
+
+            function getDialCode(scope) {
+                var \$parent = scope ? jQuery(scope) : jQuery('body');
+                
+                var \$active = \$parent.find('.country-list > .active, .country-list > .country.active, .country-list > .iti__active');
+                if (!\$active.length) {
+                    \$active = jQuery('.iti-container .country-list > .active, .iti-container .country-list > .country.active, body > .country-list > .active');
+                }
+                if (!\$active.length) {
+                    \$active = jQuery('.country-list > .active, .country-list > .country.active, .iti__country.iti__active');
+                }
+                if (\$active.length && \$active.attr('data-dial-code')) {
+                    return \$active.attr('data-dial-code').replace('+', '').trim();
+                }
+
+                var \$selectedDial = \$parent.find('.selected-dial-code, .iti__selected-dial-code');
+                if (!\$selectedDial.length) {
+                    \$selectedDial = jQuery('.selected-dial-code, .iti__selected-dial-code');
+                }
+                if (\$selectedDial.length && \$selectedDial.text()) {
+                    var textCode = \$selectedDial.text().replace('+', '').trim();
+                    if (textCode) {
+                        return textCode;
+                    }
+                }
+
+                var \$selectedFlag = \$parent.find('.selected-flag, .iti__selected-flag');
+                if (!\$selectedFlag.length) {
+                    \$selectedFlag = jQuery('.selected-flag, .iti__selected-flag');
+                }
+                if (\$selectedFlag.length && \$selectedFlag.attr('title')) {
+                    var title = \$selectedFlag.attr('title');
+                    var match = title.match(/\\+(\\d+)/);
+                    if (match && match[1]) {
+                        return match[1];
+                    }
+                }
+
+                return '';
+            }
+
+            function getCountryCode(scope) {
+                var \$parent = scope ? jQuery(scope) : jQuery('body');
+
+                var \$active = \$parent.find('.country-list > .active, .country-list > .country.active, .country-list > .iti__active');
+                if (!\$active.length) {
+                    \$active = jQuery('.iti-container .country-list > .active, .iti-container .country-list > .country.active, body > .country-list > .active');
+                }
+                if (!\$active.length) {
+                    \$active = jQuery('.country-list > .active, .country-list > .country.active, .iti__country.iti__active');
+                }
+                if (\$active.length && \$active.attr('data-country-code')) {
+                    return \$active.attr('data-country-code').toLowerCase();
+                }
+
+                var \$flag = \$parent.find('.selected-flag .iti-flag, .selected-flag .flag, .iti__selected-flag .iti__flag');
+                if (!\$flag.length) {
+                    \$flag = jQuery('.selected-flag .iti-flag, .selected-flag .flag, .iti__selected-flag .iti__flag');
+                }
+                if (\$flag.length && \$flag.attr('class')) {
+                    var classes = \$flag.attr('class').split(' ');
+                    for (var i = 0; i < classes.length; i++) {
+                        var cls = classes[i].replace('iti-flag', '').replace('iti__flag', '').replace('iti__', '').replace('flag', '').trim();
+                        if (cls.length === 2) {
+                            return cls.toLowerCase();
+                        }
+                    }
+                }
+
+                return '';
+            }
+
+            $(document).ready(function() {
+                jQuery(document).on('click', '.new-shipping-address-modal .modal-inner-wrap .flag-container ', function (event) {
+                    jQuery(".new-shipping-address-modal .modal-inner-wrap .modal-footer .action-save-address").prop('disabled', true);
+                });
+
+                // For Login customer new address
+                jQuery(document).on('click', '.new-shipping-address-modal .modal-inner-wrap .modal-footer .action-save-address', function (event) {
+                    var newaddress_dialcode = getDialCode("#shipping-new-address-form");
+                    var mobile = jQuery(".form-shipping-address input[name='telephone']").val();
+                    mobile = newaddress_dialcode + mobile;
+
+                    if(!$.isNumeric(mobile) || mobile.substring(0,1)=='+' || mobile.substring(0,1)=='-' || mobile.indexOf(' ') !== -1 || /[^a-zA-Z0-9]/.test(mobile)) {
+                        jQuery(".form-shipping-address .field-tooltip + .field-note").css('color', 'red');
+                        jQuery(".form-shipping-address .field-tooltip + .field-note").text('Please, Enter Valid Mobile Number.');
+                        jQuery(".new-shipping-address-modal .modal-inner-wrap .modal-footer .action-save-address").prop('disabled', true);
+                    } else {
+                        jQuery(".new-shipping-address-modal .modal-inner-wrap .modal-footer .action-save-address").prop('disabled', false);
+                    }
+                });
+
+                var checkExistSameAddress = setInterval(function() {
+                    if ($("#billing-address-same-as-shipping-shared").length) {
+                        jQuery('#billing-address-same-as-shipping-shared').on('change', function () {
+                            if (jQuery(this).is(':checked')) {
+                                var mobile = jQuery(".form-shipping-address input[name='telephone']").val();
+                                var dialcode = getDialCode(".form-shipping-address");
+                                mobile = dialcode + mobile;
+                            }
+                        });
+                        clearInterval(checkExistSameAddress);
+                    }
+                }, 500);
+            });
+
+            function Smsresetdata() {
+                jQuery(int_phone_input_element).removeClass('mage-error');
+                jQuery('#smserror').html('');
+            }
+
+            function Smstoggeldata(Elementid) {
+                jQuery(Elementid).toggle();
+            }
+
+            var country_flag = "{$country_flag}";
+            localStorage.setItem('country_code', country_flag);
+
+            function validatemobilenumer(code) {
+                if (!code) return false;
+                var country_code = code.toUpperCase();
+                if (validationarray) {
+                    var validationJSONString = JSON.stringify($validationarray);
+                    var validationobj = jQuery.parseJSON(validationJSONString);
+                    var i = 0;
+                    while (i < validationobj.length) {
+                        if (country_code && validationobj[0]['country'] != 1) {
+                            if (validationobj[i]['country'] == country_code) {
+                                digit = validationobj[i]['digit'];
+                                return digit;
+                            } else if (validationobj[i]['country'] == 1) {
+                                digit = validationobj[i]['digit'];
+                                return digit;         
+                            }
+                        } else if (validationobj[i]['country'] == 1) { 
+                            var j = 1; 
+                            while (j < validationobj.length) {
+                                if (validationobj[j]['country'] == country_code) {   
+                                    digit = validationobj[j]['digit'];
+                                    return digit;
+                                }
+                                j++;     
+                            }
+                            digit = validationobj[i]['digit'];
+                            return digit;   
+                        }
+                        i++;
+                    }
+                }
+                return false;
+            }
+
+            // Select shipping Address
+            jQuery(document).on('click', '.action.action-select-shipping-item', function (event) {
+                mobile = jQuery(".shipping-address-item.selected-item a").text();
+            });
+            
+            jQuery(document).on("click", ".modal-inner-wrap .intl-tel-input .flag-container", function(){   
+                var str = jQuery(".selected-flag").attr("title");
+            });
+
+            var checkPhoneInputExist = setInterval(function () {
+                jQuery(".modal-inner-wrap .modal-footer .action-save-address").prop('disabled', true);
+     
+                if (jQuery(int_phone_input_element).length) {
+                    clearInterval(checkPhoneInputExist);
+                    if ({$isFlagEnabledJs}) {
+                        try {
+                            var $phoneEl = jQuery(int_phone_input_element);
+                            if (!$phoneEl.data('plugin_intlTelInput') && !$phoneEl.closest('.intl-tel-input').length) {
+                                var selectedCountryId = jQuery('.form-shipping-address select[name="country_id"], select[name="country_id"]').val() ||
+                                                        jQuery('.form-shipping-address select[name="country_id"] option:selected, select[name="country_id"] option:selected').val();
+                                var initCountry = (selectedCountryId && typeof selectedCountryId === 'string' && selectedCountryId.trim() !== '') ? selectedCountryId.toLowerCase() : country_flag;
+
+                                $phoneEl.intlTelInput({
+                                    initialCountry: initCountry,
+                                    preferredCountries: {$pinnedCountriesJson},
+                                    onlyCountries: {$availableCountriesJson},
+                                    separateDialCode: true,              
+                                    utilsScript: '{$getUrlJs}',
+                                    nationalMode: true
+                                });
+                                $phoneEl.removeAttr('placeholder');
+                            }
+                        } catch (e) {
+                            console.error('intlTelInput shipping init error:', e);
+                        }
+
+                        var lastSyncedCountry = initCountry;
+                        var syncCountryTimer = setInterval(function () {
+                            var $countrySelect = jQuery('.form-shipping-address select[name="country_id"], select[name="country_id"]');
+                            var currentSelectVal = ($countrySelect.val() || $countrySelect.find('option:selected').val() || '').toLowerCase();
+                            if (currentSelectVal && currentSelectVal !== lastSyncedCountry) {
+                                lastSyncedCountry = currentSelectVal;
+                                try {
+                                    jQuery(int_phone_input_element).intlTelInput('setCountry', currentSelectVal);
+                                } catch (e) {}
+                            }
+                        }, 250);
+                        setTimeout(function() { clearInterval(syncCountryTimer); }, 10000);
+
+                        jQuery(document).on('change', '.form-shipping-address select[name="country_id"], select[name="country_id"]', function() {
+                            var selectedCode = jQuery(this).val();
+                            if (selectedCode && typeof selectedCode === 'string' && selectedCode.trim() !== '') {
+                                lastSyncedCountry = selectedCode.toLowerCase();
+                                try {
+                                    jQuery(int_phone_input_element).intlTelInput('setCountry', selectedCode.toLowerCase());
+                                } catch (e) {}
+                            }
+                        });
+
+                        jQuery(document).on('countrychange', int_phone_input_element, function(e, countryData) {
+                            if (countryData && countryData.iso2) {
+                                lastSyncedCountry = countryData.iso2.toLowerCase();
+                                var $countrySelect = jQuery('.form-shipping-address select[name="country_id"], select[name="country_id"]');
+                                if ($countrySelect.length && ($countrySelect.val() || '').toLowerCase() !== lastSyncedCountry) {
+                                    $countrySelect.val(countryData.iso2.toUpperCase()).trigger('change');
+                                }
+                            }
+                        });
+
+                        var countrycodeval = getDialCode(".form-shipping-address");
+
+                        $("body").on("click", ".form-shipping-address .flag-container", function(){ 
+                            jQuery(int_phone_input_element).val('');
+                            jQuery("#checkout-step-shipping_method .primary .button").prop('disabled', true);
+                        });
+
+                        jQuery(".form-shipping-address input[name='telephone']").keyup(function(event) {
+                            Smsresetdata();
+
+                            var mobile = jQuery(".form-shipping-address input[name='telephone']").val();
+                            var dialcode = getDialCode(".form-shipping-address");
+                            var countrycodeval = getCountryCode(".form-shipping-address");
+                            var mobilelength = jQuery(".form-shipping-address input[name='telephone']").val().length;
+
+                            jQuery("#mobilenumber").val(mobile);
+                            jQuery("#countryreg").val(dialcode);
+                            var temp = true;
+
+                            var validate = validatemobilenumer(countrycodeval);
+                            var mobilenumber = dialcode + mobile;
+                            var countrycodecount = parseInt(validate) + parseInt(countrycodeval.length);
+
+                            jQuery(".form-shipping-address input[name='telephone']").removeClass('minimum-length-' + validate);
+
+                            if (validate != mobilenumber.length && validate != false) {
+                                jQuery(".form-shipping-address input[name='telephone']").attr('maxlength', validate);
+                                jQuery(".form-shipping-address input[name='telephone']").attr('class', 'mobnumber mage-error minimum-length-' + validate);
+                            }
+                            if (validate == false) {
+                                jQuery(".form-shipping-address input[name='telephone']").removeAttr('maxlength');
+                                jQuery(".form-shipping-address input[name='telephone']").addClass('minimum-length-8');
+                            } 
+
+                            if (mobile == null || mobile == '') {
+                                temp = false;
+                                jQuery(".form-shipping-address input[name='telephone']").addClass('mage-error');
+                                $(".form-shipping-address .field-note").css('color', 'red');
+                                jQuery("#checkout-step-shipping_method .primary .button").prop('disabled', true);
+                                return false;
+                            }
+                            if (!$.isNumeric(mobile) || mobile.substring(0,1) == '+' || mobile.substring(0,1) == '-' || mobile.indexOf(' ') !== -1 || /[^a-zA-Z0-9]/.test(mobile)) {
+                                temp = false;
+                                jQuery(".form-shipping-address .field-tooltip + .field-note").css('color', 'red');
+                                jQuery(".form-shipping-address .field-tooltip + .field-note").text('Please, Enter Valid Mobile Number.');
+                                jQuery(".checkout-payment-method.submit .payment-methods .actions-toolbar .action.primary.checkout").prop('disabled', true);
+                                jQuery(".new-shipping-address-modal .modal-inner-wrap .modal-footer .action-save-address").prop('disabled', true);
+                                jQuery("#checkout-step-shipping_method .primary .button").prop('disabled', true);
+                                return false;
+                            }
+
+                            mobile = dialcode + mobile;
+                            
+                            if (temp == true) {
+                                $.ajax({
+                                    type: "POST",
+                                    url: '{$getUrl}countryflag/customer/validatecheckout',
+                                    data: {'mobile': mobile, 'countrycode': countrycodeval, 'mobilelength': mobilelength, 'country_id': countrycodeval},
+                                    success: function(data) {
+                                        if (data && (data.validate === true || data.validate === "true")) {                                      
+                                            jQuery(".modal-inner-wrap .modal-footer .action-save-address").prop('disabled', false);
+                                            jQuery("#checkout-step-shipping_method .primary .button").prop('disabled', false);
+                                            jQuery(".checkout-payment-method.submit .payment-methods .actions-toolbar .action.primary.checkout").prop('disabled', false);
+                                            $(".form-shipping-address .field-note").css('color', 'black');
+                                            $(".form-shipping-address .field-note").text('');
+                                        } else {
+                                            jQuery(".modal-inner-wrap .modal-footer .action-save-address").prop('disabled', true);
+                                            jQuery("#checkout-step-shipping_method .primary .button").prop('disabled', true);
+                                            jQuery(".checkout-payment-method.submit .payment-methods .actions-toolbar .action.primary.checkout").prop('disabled', true);
+                                            $(".form-shipping-address .field-note").css('color', 'red');
+                                            if (data && data.message) {
+                                                $(".form-shipping-address .field-note").text(data.message);
+                                            }
+                                        }
+                                    },
+                                    error: function(data) {
+                                        $(".form-shipping-address .field-note").css('color', 'red');
+                                        $(".form-shipping-address .field-note").text($.mage.__('Something went wrong, Try again later.'));
+                                        jQuery("#checkout-step-shipping_method .primary .button").prop('disabled', true);
+                                    }
+                                });
+                            }
+                        });
+
+                        jQuery(document).on('click', '.country-list li, .iti-container .country-list li', function() {
+                            var countrycodeval = getDialCode(".form-shipping-address");
+                        });
+                    }
+                }
+            }, 100); 
+
+            var checkPhoneInputExistbilling = setInterval(function () {
+                if (jQuery(".billing-address-form input[name='telephone']").length) {
+                    clearInterval(checkPhoneInputExistbilling);
+                    jQuery(".billing-address-form input[name='telephone']").on("countrychange", function(e, countryData) {
+                        var dialCode = countryData.dialCode;
+                    });
+
+                    if ({$isFlagEnabledJs}) {
+                        try {
+                            var \$billingEl = jQuery(".billing-address-form input[name='telephone']");
+                            if (!\$billingEl.data('plugin_intlTelInput') && !\$billingEl.closest('.intl-tel-input').length) {
+                                var billingCountryVal = jQuery(".billing-address-form select[name='country_id']").val();
+                                var initBillingCountry = (billingCountryVal && typeof billingCountryVal === 'string' && billingCountryVal.trim() !== '') ? billingCountryVal.toLowerCase() : country_flag;
+
+                                \$billingEl.intlTelInput({
+                                    initialCountry: initBillingCountry,
+                                    preferredCountries: {$pinnedCountriesJson},
+                                    onlyCountries: {$availableCountriesJson},
+                                    separateDialCode: true,
+                                    utilsScript: '{$getUrlJs}',
+                                    nationalMode: true
+                                });
+                                \$billingEl.removeAttr('placeholder');
+                            }
+                        } catch (e) {
+                            console.error('intlTelInput billing init error:', e);
+                        }
+
+                        jQuery(document).on('change', '.billing-address-form select[name="country_id"]', function() {
+                            var selectedCode = jQuery(this).val();
+                            if (selectedCode && typeof selectedCode === 'string' && selectedCode.trim() !== '') {
+                                try {
+                                    jQuery(".billing-address-form input[name='telephone']").intlTelInput('setCountry', selectedCode.toLowerCase());
+                                } catch (e) {}
+                            }
+                        });
+
+                        var countrycodeval = getDialCode(".billing-address-form");
+                        
+                        jQuery(".billing-address-form .intl-tel-input .flag-container").click(function(event) {
+                            jQuery(".billing-address-form input[name='telephone']").val(""); 
+                            jQuery(".checkout-billing-address .primary .action-update").prop('disabled', true);
+                        });  
+
+                        // Billing Address KeyUP event
+                        jQuery(".billing-address-form input[name='telephone']").keyup(function(event) {
+                            Smsresetdata();
+
+                            var mobile = jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").val();
+                            var dialcode_billing = getDialCode("._active .checkout-billing-address .billing-address-form");
+                            var countrycodeval = getCountryCode("._active .checkout-billing-address .billing-address-form");
+                            var mobilelength = jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").val().length;
+
+                            jQuery("#mobilenumber").val(mobile);
+                            jQuery("#countryreg").val(dialcode_billing);
+                            var temp = true;
+
+                            var validate = validatemobilenumer(countrycodeval);
+                            var mobilenumber = dialcode_billing + mobile;
+                            var countrycodecount = parseInt(validate) + parseInt(countrycodeval.length);
+
+                            jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").removeClass('minimum-length-' + validate);
+
+                            if (validate != mobilenumber.length && validate != false) {
+                                jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").attr('maxlength', validate);
+                                jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").attr('class', 'mobnumber mage-error minimum-length-' + validate);
+                            }
+                            if (validate == false) {
+                                jQuery(".form-shipping-address input[name='telephone']").removeAttr('maxlength');
+                                jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").addClass('minimum-length-8');
+                            } 
+
+                            if (mobile == null || mobile == '') {
+                                temp = false;
+                                jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").addClass('mage-error');
+                                $("._active .checkout-billing-address .billing-address-form .field-tooltip + .field-note").css('color', 'red');
+                                jQuery("._active .checkout-billing-address .primary .action-update").prop('disabled', true);
+                                return false;
+                            }
+                            if (!$.isNumeric(mobile) || mobile.substring(0,1) == '+' || mobile.substring(0,1) == '-' || mobile.indexOf(' ') !== -1 || /[^a-zA-Z0-9]/.test(mobile)) {
+                                temp = false;
+                                jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").addClass('mage-error');
+                                $("._active .checkout-billing-address .billing-address-form .field-tooltip + .field-note").css('color', 'red');
+                                $("._active .checkout-billing-address .billing-address-form .field-tooltip + .field-note").text($.mage.__('Please, Enter Valid Mobile Number.'));
+                                jQuery("._active .checkout-billing-address .primary .action-update").prop('disabled', true);
+                                return false;
+                            }
+
+                            mobile = dialcode_billing + mobile;
+
+                            if (temp == true) {
+                                $.ajax({
+                                    type: "POST",
+                                    url: '{$getUrl}countryflag/customer/validatecheckout',
+                                    data: {
+                                        'mobile': mobile,
+                                        'countrycode': countrycodeval,
+                                        'mobilelength': mobilelength,
+                                        'country_id': countrycodeval,
+                                        'address_type': 'billing'
+                                    },
+                                    success: function(data) {
+                                        if (data && (data.validate === true || data.validate === "true")) {
+                                            jQuery("._active .checkout-billing-address .primary .action-update").prop('disabled', false);
+                                            $("._active .checkout-billing-address .billing-address-form .field-tooltip + .field-note").css('color', 'black');
+                                            $("._active .checkout-billing-address .billing-address-form .field-tooltip + .field-note").text('');
+                                        } else {
+                                            jQuery("._active .checkout-billing-address .primary .action-update").prop('disabled', true);
+                                            $("._active .checkout-billing-address .billing-address-form .field-tooltip + .field-note").css('color', 'red');
+                                            if (data && data.message) {
+                                                $("._active .checkout-billing-address .billing-address-form .field-tooltip + .field-note").text(data.message);
+                                            }
+                                        }
+                                    },
+                                    error: function(data) {
+                                        $("._active .checkout-billing-address .billing-address-form .field-tooltip + .field-note").css('color', 'red');
+                                        $("._active .checkout-billing-address .billing-address-form .field-tooltip + .field-note").text($.mage.__('Something went wrong, Try again later.'));
+                                        jQuery("._active .checkout-billing-address .primary .action-update").prop('disabled', true);
+                                    }
+                                });
+                            }
+                        });
+
+                        jQuery(document).on('click', '.country-list li, .iti-container .country-list li', function() {
+                            var countrycodeval = getDialCode("._active .checkout-billing-address .billing-address-form");
+                        });
+                    }
+                }
+            }, 100); 
+        }
+    );
+script;
+?>
+<?= /* @noEscape */ $secureRenderer->renderTag('script', [], $scriptString, false) ?>

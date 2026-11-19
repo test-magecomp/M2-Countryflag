@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../../app/code/Magento/Webapi/etc/webapi.xsd">
+
+    <route url="/V1/InternationalTelephone/getcountrycodedata/" method="GET">
+        <service class="Magecomp\Countryflag\Api\FlagInterface" method="countrycollection"/>
+            <resources>
+                <resource ref="anonymous"/>
+            </resources>
+    </route>
+       <route method="POST" url="/V1/countryflag/configvalue/">
+        <service class="Magecomp\Countryflag\Api\FlagInterface" method="getConfigvalue"/>
+        <resources>
+            <resource ref="anonymous"/>
+        </resources>
+    </route>
+
+</routes>

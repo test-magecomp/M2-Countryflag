@@ -1,0 +1,346 @@
+<?php
+
+/** @var \Magento\Customer\Block\Address\Edit $block */
+$countryBlock = $block->getLayout()->createBlock(Magecomp\Countryflag\Block\IntPhoneInput::class);
+?>
+<?php $_company = $block->getLayout()->createBlock(\Magento\Customer\Block\Widget\Company::class) ?>
+<?php $_telephone = $block->getLayout()->createBlock(\Magento\Customer\Block\Widget\Telephone::class) ?>
+<?php $_fax = $block->getLayout()->createBlock(\Magento\Customer\Block\Widget\Fax::class) ?>
+<form class="form-address-edit" action="<?= $block->escapeUrl($block->getSaveUrl()) ?>" method="post" id="form-validate" enctype="multipart/form-data" data-hasrequired="<?= $block->escapeHtmlAttr(__('* Required Fields')) ?>">
+    <fieldset class="fieldset ">
+        <legend class="legend"><span><?= $block->escapeHtml(__('Contact Information')) ?></span></legend><br>
+        <?= $block->getBlockHtml('formkey') ?>
+        <input type="hidden" name="success_url" value="<?= $block->escapeUrl($block->getSuccessUrl()) ?>">
+        <input type="hidden" name="error_url" value="<?= $block->escapeUrl($block->getErrorUrl()) ?>">
+        <input type="hidden" name="countrycode" id="countrycode">
+        <?= $block->getNameBlockHtml() ?>
+
+        <?php if ($_company->isEnabled()) : ?>
+            <?= $_company->setCompany($block->getAddress()->getCompany())->toHtml() ?>
+        <?php endif ?>
+
+        <?php if ($_telephone->isEnabled()) : ?>
+            <?= $_telephone->setTelephone($block->getAddress()->getTelephone())->toHtml() ?>
+            <div id="smserror" name="smserror" generated="true" class="mage-error" style="margin-top: -15px;"></div>
+        <?php endif ?>
+
+        <?php if ($_fax->isEnabled()) : ?>
+            <?= $_fax->setFax($block->getAddress()->getFax())->toHtml() ?>
+        <?php endif ?>
+
+    </fieldset>
+    <fieldset class="fieldset">
+        <legend class="legend"><span><?= $block->escapeHtml(__('Address')) ?></span></legend><br>
+        <?php $_streetValidationClass = $this->helper(\Magento\Customer\Helper\Address::class)->getAttributeValidationClass('street'); ?>
+        <div class="field street required">
+            <label for="street_1" class="label">
+                <span><?= /* @noEscape */ $block->getAttributeData()->getFrontendLabel('street') ?></span>
+            </label>
+            <div class="control">
+                <input type="text" name="street[]" value="<?= $block->escapeHtmlAttr($block->getStreetLine(1)) ?>" title="<?= /* @noEscape */ $block->getAttributeData()->getFrontendLabel('street') ?>" id="street_1" class="input-text <?= $block->escapeHtmlAttr($_streetValidationClass) ?>" />
+                <div class="nested">
+                    <?php $_streetValidationClass = trim(str_replace('required-entry', '', $_streetValidationClass)); ?>
+                    <?php for ($_i = 1, $_n = $this->helper(\Magento\Customer\Helper\Address::class)->getStreetLines(); $_i < $_n; $_i++) : ?>
+                        <div class="field additional">
+                            <label class="label" for="street_<?= /* @noEscape */ $_i + 1 ?>">
+                                <span><?= $block->escapeHtml(__('Street Address %1', $_i + 1)) ?></span>
+                            </label>
+                            <div class="control">
+                                <input type="text" name="street[]" value="<?= $block->escapeHtmlAttr($block->getStreetLine($_i + 1)) ?>" title="<?= $block->escapeHtmlAttr(__('Street Address %1', $_i + 1)) ?>" id="street_<?= /* @noEscape */ $_i + 1 ?>" class="input-text <?= $block->escapeHtmlAttr($_streetValidationClass) ?>">
+                            </div>
+                        </div>
+                    <?php endfor; ?>
+                </div>
+            </div>
+        </div>
+
+        <?php if ($this->helper(\Magento\Customer\Helper\Address::class)->isVatAttributeVisible()) : ?>
+            <div class="field taxvat">
+                <label class="label" for="vat_id">
+                    <span><?= /* @noEscape */ $block->getAttributeData()->getFrontendLabel('vat_id') ?></span>
+                </label>
+                <div class="control">
+                    <input type="text" name="vat_id" value="<?= $block->escapeHtmlAttr($block->getAddress()->getVatId()) ?>" title="<?= /* @noEscape */ $block->getAttributeData()->getFrontendLabel('vat_id') ?>" class="input-text <?= $block->escapeHtmlAttr($this->helper(\Magento\Customer\Helper\Address::class)->getAttributeValidationClass('vat_id')) ?>" id="vat_id">
+                </div>
+            </div>
+        <?php endif; ?>
+        <div class="field city required">
+            <label class="label" for="city"><span><?= /* @noEscape */ $block->getAttributeData()->getFrontendLabel('city') ?></span></label>
+            <div class="control">
+                <input type="text" name="city" value="<?= $block->escapeHtmlAttr($block->getAddress()->getCity()) ?>" title="<?= $block->escapeHtmlAttr(__('City')) ?>" class="input-text <?= $block->escapeHtmlAttr($this->helper(\Magento\Customer\Helper\Address::class)->getAttributeValidationClass('city')) ?>" id="city">
+            </div>
+        </div>
+        <div class="field region required">
+            <label class="label" for="region_id">
+                <span><?= /* @noEscape */ $block->getAttributeData()->getFrontendLabel('region') ?></span>
+            </label>
+            <div class="control">
+                <select id="region_id" name="region_id" title="<?= /* @noEscape */ $block->getAttributeData()->getFrontendLabel('region') ?>" class="validate-select region_id" <?= /* @noEscape */ !$block->getConfig('general/region/display_all') ? ' disabled="disabled"' : '' ?>>
+                    <option value=""><?= $block->escapeHtml(__('Please select a region, state or province.')) ?></option>
+                </select>
+                <input type="text" id="region" name="region" value="<?= $block->escapeHtmlAttr($block->getRegion()) ?>" title="<?= /* @noEscape */ $block->getAttributeData()->getFrontendLabel('region') ?>" class="input-text validate-not-number-first <?= $block->escapeHtmlAttr($this->helper(\Magento\Customer\Helper\Address::class)->getAttributeValidationClass('region')) ?>" <?= !$block->getConfig('general/region/display_all') ? ' disabled="disabled"' : '' ?> />
+            </div>
+        </div>
+        <div class="field zip required">
+            <label class="label" for="zip">
+                <span><?= /* @noEscape */ $block->getAttributeData()->getFrontendLabel('postcode') ?></span>
+            </label>
+            <div class="control">
+                <input type="text" name="postcode" value="<?= $block->escapeHtmlAttr($block->getAddress()->getPostcode()) ?>" title="<?= /* @noEscape */ $block->getAttributeData()->getFrontendLabel('postcode') ?>" id="zip" class="input-text validate-zip-international <?= $block->escapeHtmlAttr($this->helper(\Magento\Customer\Helper\Address::class)->getAttributeValidationClass('postcode')) ?>">
+                <div role="alert" class="message warning" style="display:none">
+                    <span></span>
+                </div>
+            </div>
+        </div>
+        <div class="field country required">
+            <label class="label" for="country"><span><?= /* @noEscape */ $block->getAttributeData()->getFrontendLabel('country_id') ?></span></label>
+            <div class="control">
+                <?= $block->getCountryHtmlSelect() ?>
+            </div>
+        </div>
+
+        <?php if ($block->isDefaultBilling()) : ?>
+            <div class="message info">
+                <span><?= $block->escapeHtml(__("It's a default billing address.")) ?></span>
+            </div>
+        <?php elseif ($block->canSetAsDefaultBilling()) : ?>
+            <div class="field choice set billing">
+                <input type="checkbox" id="primary_billing" name="default_billing" value="1" class="checkbox">
+                <label class="label" for="primary_billing">
+                    <span><?= $block->escapeHtml(__('Use as my default billing address')) ?></span>
+                </label>
+            </div>
+        <?php else : ?>
+            <input type="hidden" name="default_billing" value="1" />
+        <?php endif; ?>
+
+        <?php if ($block->isDefaultShipping()) : ?>
+            <div class="message info">
+                <span><?= $block->escapeHtml(__("It's a default shipping address.")) ?></span>
+            </div>
+        <?php elseif ($block->canSetAsDefaultShipping()) : ?>
+            <div class="field choice set shipping">
+                <input type="checkbox" id="primary_shipping" name="default_shipping" value="1" class="checkbox">
+                <label class="label" for="primary_shipping">
+                    <span><?= $block->escapeHtml(__('Use as my default shipping address')) ?></span>
+                </label>
+            </div>
+        <?php else : ?>
+            <input type="hidden" name="default_shipping" value="1">
+        <?php endif; ?>
+    </fieldset>
+    <div class="actions-toolbar">
+        <div class="primary">
+            <button type="submit" id="editbtn" class="action save primary" data-action="save-address" title="<?= $block->escapeHtmlAttr(__('Save Address')) ?>">
+                <span><?= $block->escapeHtml(__('Save Address')) ?></span>
+            </button>
+        </div>
+        <div class="secondary">
+            <a class="action back" href="<?= $block->escapeUrl($block->getBackUrl()) ?>">
+                <span><?= $block->escapeHtml(__('Go back')) ?></span>
+            </a>
+        </div>
+    </div>
+</form>
+<script type="text/x-magento-init">
+    {
+        "#form-validate": {
+            "addressValidation": {
+                "postCodes": <?= /* @noEscape */ $block->getPostCodeConfig()->getSerializedPostCodes(); ?>
+            }
+        },
+        "#country": {
+            "regionUpdater": {
+                "optionalRegionAllowed": <?= /* @noEscape */ $block->getConfig('general/region/display_all') ? 'true' : 'false' ?>,
+                "regionListId": "#region_id",
+                "regionInputId": "#region",
+                "postcodeId": "#zip",
+                "form": "#form-validate",
+                "regionJson": <?= /* @noEscape */ $this->helper(\Magento\Directory\Helper\Data::class)->getRegionJson() ?>,
+                "defaultRegion": "<?= (int) $block->getRegionId() ?>",
+                "countriesWithOptionalZip": <?= /* @noEscape */ $this->helper(\Magento\Directory\Helper\Data::class)->getCountriesWithOptionalZip(true) ?>
+            }
+        }
+    }
+</script>
+<?php
+define('BUILD_VERSION', '1.0.2');
+define('DEBUG_MODE', false); // DEBUG
+define('PHONE_INPUT_ELEMENT', 'input[name="telephone"]');
+?>
+<?php if (DEBUG_MODE) : ?>
+    <pre>
+            DetectByIp: <?php /* @noEscape */ echo $countryBlock->getDetectByIp(); ?>
+        <br />
+            CurrentIP: <?php print_r($countryBlock->getCustomerIPDetails()); ?>
+    </pre>
+<?php endif; ?>
+<script type="text/javascript">
+    var int_phone_input_element = '<?php /* @noEscape */ echo PHONE_INPUT_ELEMENT; ?>';
+    var selectcountry = <?php print_r($countryBlock->getApplicableCountry()); ?>;
+</script>
+
+<script>
+</script>
+<script>
+    require([
+            'jquery',
+            'Magecomp_Countryflag/js/intlTelInput.min'
+        ],
+        function($) {
+            $(document).ready(function() {
+                // Attach a click event to the "Save Address" button
+                jQuery('button.action.save.primary[data-action="save-address"]').on('click', function() {
+                    if (jQuery('#telephone').val() == '' || jQuery('#telephone').val() == '1') {
+
+                        jQuery('#smserror').html('This field is required');
+
+                        jQuery('button.action.save.primary[data-action="save-address"]').prop("disabled", true);
+
+                    }
+                    var str = jQuery(".selected-flag").attr("title");
+                    var countrycodeval = str.split('+')[1];
+                    jQuery('#countrycode').val(countrycodeval);
+                });
+            });
+            jQuery("input[name='telephone']").on("keyup", function() {
+                if (jQuery('#telephone').val() != '' ) {
+                    jQuery('button.action.save.primary[data-action="save-address"]').prop("disabled", false);
+                }
+            });
+            
+            var countryCodes = JSON.parse('<?= /* @noEscape */ $countryBlock->getCountryData() ?>');
+            
+            function getCountryCode(phoneNumber) {
+                for (var country in countryCodes) {
+                    if (phoneNumber.startsWith(countryCodes[country])) {
+                    if (countryCodes[country] === '1') {
+                        // Extract area code
+                        var areaCode = phoneNumber.substring(1, 4);
+
+                        // Check if area code belongs to US or Canada
+                        var usAreaCodes = /^(201|202|203|205|206|207|208|209|210|212|213|214|215|216|217|218|219|224|225|227|228|229|231|234|239|240|248|251|252|253|254|256|260|262|267|269|270|276|281|301|302|303|304|305|307|308|309|310|312|313|314|315|316|317|318|319|320|321|323|325|330|331|334|336|337|339|340|345|346|347|351|352|360|361|364|385|386|401|402|404|405|406|407|408|409|410|412|413|414|415|417|419|423|424|425|430|432|434|435|440|442|443|458|463|469|470|473|475|478|479|480|484|501|502|503|504|505|507|508|509|510|512|513|515|516|517|518|520|530|531|534|539|540|541|551|559|561|562|563|564|567|570|571|573|574|575|580|585|586|601|602|603|605|606|607|608|609|610|612|614|615|616|617|618|619|620|623|626|630|631|636|641|646|649|650|651|657|660|661|662|667|669|678|679|681|682|689|701|702|703|704|706|707|708|710|712|713|714|715|716|717|718|719|720|724|725|727|731|732|734|737|740|743|747|754|757|758|760|762|763|765|769|770|772|773|774|775|779|781|784|785|786|787|801|802|803|804|805|806|808|809|810|812|813|814|815|816|817|818|828|830|831|832|835|843|845|847|848|849|850|854|856|857|858|859|860|862|863|864|865|868|869|870|872|878|901|903|904|906|907|908|909|910|912|913|914|915|916|917|918|919|920|925|927|928|929|931|936|937|939|940|941|947|949|951|952|954|956|957|959|970|971|972|973|975|978|979|980|984|985|989)$/;
+                        var caAreaCodes = /^(226|236|249|354|365|367|437|548|581|587|600|639|672|742|825)$/;
+
+                        var sameCodes = /^(204|250|289|306|343|403|416|418|431|438|450|506|514|519|579|604|613|647|705|709|778|780|782|807|819|867|873|902|905)$/;
+
+                        if (usAreaCodes.test(areaCode)) {
+                            return 'US';
+                        } else if (caAreaCodes.test(areaCode)) {
+                            return 'CA';
+                        }
+                        else if(sameCodes.test(areaCode)){
+                            return localStorage.getItem("countrycode").toUpperCase();
+                        }
+                    } else {
+                        return country;
+                    }
+                }
+            }
+            return 'US';
+            }
+
+            function getCountryDialingCode(countryCode) {
+                
+                return countryCodes[countryCode] || ''; 
+            }
+
+            var phoneNumber = $('#telephone').val().trim();
+            if(phoneNumber != ''){
+                var countryCode = getCountryCode(phoneNumber);
+                var countrydialcode=getCountryDialingCode(countryCode);
+
+                if (phoneNumber.startsWith(countrydialcode)) {
+                    phoneNumber = phoneNumber.substring(countrydialcode.length);
+                }
+                $('#telephone').val(phoneNumber);
+
+            }
+            function Smsresetdata() {
+                jQuery(int_phone_input_element).removeClass('mage-error');
+                jQuery('#smserror').html('');
+            }
+
+            function Smstoggeldata(Elementid) {
+                jQuery(Elementid).toggle();
+            }
+            <?php if($countryBlock->isEnabled()): ?>
+            var initialCountry = countryCode || "<?= /* @noEscape*/ $countryBlock->getInitialCountry(); ?>";
+            
+            <?php if($countryBlock->getDetectByIp() && !$block->getAddress()->getCountryId()): ?>
+                initialCountry = "<?= /* @noEscape*/ $countryBlock->getCustomerIPDetails(); ?>";
+            <?php endif; ?>
+            jQuery(int_phone_input_element).intlTelInput({
+                initialCountry: initialCountry,
+                preferredCountries: <?= /* @noEscape */ $countryBlock->getPinnedCountriesJson() ?>,
+                onlyCountries: <?= /* @noEscape */ $countryBlock->getAvailableCountriesJson() ?>,
+                separateDialCode: true,              
+                nationalMode: true,
+                autoPlaceholder: "aggressive",
+                utilsScript: "<?= /* @noEscape */ $countryBlock->getViewFileUrl('Magecomp_Countryflag::js/utils.js') ?>"
+            });
+                jQuery('#telephone').keyup(function() {
+                    Smsresetdata();
+                    var str = jQuery(".selected-flag").attr("title");
+                    var countrycodeval = str.split('+')[1];
+                    var mobilelength = jQuery(int_phone_input_element).val().length;
+                    var mobile = jQuery(int_phone_input_element).val();
+
+                    var temp = true;
+
+                    if (mobile == null || mobile == '') {
+                        temp = false;
+                        jQuery(int_phone_input_element).addClass('mage-error');
+                        $('#smserror').html('<?php /* @noEscape */ echo __('This is a required field.') ?>');
+                        jQuery('button.action.save.primary[data-action="save-address"]').prop("disabled", true);
+                    }
+                    if (!$.isNumeric(mobile) || mobile.substring(0, 1) == '+' || mobile.substring(0, 1) == '-') {
+                        temp = false;
+                        jQuery(int_phone_input_element).addClass('mage-error');
+                        $('#smserror').html('<?php /* @noEscape */ echo __('Please, Enter Valid Mobile Number.') ?>');
+
+                    }
+                    var countrycode = jQuery(".flag-container > .country-list > .active").attr("data-country-code");
+                    if(countrycode == 1){
+                        localStorage.setItem("countrycode",countrycode);
+                    }
+                    $.ajax({
+                        type: "POST",
+                        url: '<?php /* @noEscape */ echo $this->getUrl('countryflag/customer/validate') ?>',
+                        data: {
+                            'mobile': mobile,
+                            'countrycode': countrycode,
+                            'mobilelength': mobilelength,
+                            'country_id': countrycodeval
+                        },
+                        success: function(data) {
+                            if (data.digit) {
+                                jQuery(int_phone_input_element).attr('maxlength', data.digit);
+                                if (data.validate == true) {
+                                    jQuery(int_phone_input_element).removeAttr('maxlength');
+                                    $('#smserror').html('<?php /* @noEscape */ echo '' ?>');
+                                    jQuery('button.action.save.primary[data-action="save-address"]').prop("disabled", false);
+                                } else {
+
+                                    if (temp == true) {
+                                        $('#smserror').html(data.message);
+                                    }
+                                    jQuery('button.action.save.primary[data-action="save-address"]').prop("disabled", true);
+                                }
+                            }
+
+                        },
+                        error: function(data) {
+                            $('#smserror').html('<?php /* @noEscape */ echo __('Something went wrong, Try again later.') ?>');
+                        }
+                    });
+                });
+
+                jQuery('.country-list li').click(function() {
+                    jQuery(int_phone_input_element).val('');
+                });
+
+            <?php endif; ?>
+
+        });
+</script>
