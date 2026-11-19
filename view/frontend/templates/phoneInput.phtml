@@ -203,13 +203,13 @@ $isFlagEnabledJs = $isEnabled ? 'true' : 'false';
                     clearInterval(checkPhoneInputExist);
                     if ({$isFlagEnabledJs}) {
                         try {
-                            var $phoneEl = jQuery(int_phone_input_element);
-                            if (!$phoneEl.data('plugin_intlTelInput') && !$phoneEl.closest('.intl-tel-input').length) {
+                            var \$phoneEl = jQuery(int_phone_input_element);
+                            if (!\$phoneEl.data('plugin_intlTelInput') && !\$phoneEl.closest('.intl-tel-input').length) {
                                 var selectedCountryId = jQuery('.form-shipping-address select[name="country_id"], select[name="country_id"]').val() ||
                                                         jQuery('.form-shipping-address select[name="country_id"] option:selected, select[name="country_id"] option:selected').val();
                                 var initCountry = (selectedCountryId && typeof selectedCountryId === 'string' && selectedCountryId.trim() !== '') ? selectedCountryId.toLowerCase() : country_flag;
 
-                                $phoneEl.intlTelInput({
+                                \$phoneEl.intlTelInput({
                                     initialCountry: initCountry,
                                     preferredCountries: {$pinnedCountriesJson},
                                     onlyCountries: {$availableCountriesJson},
@@ -217,7 +217,7 @@ $isFlagEnabledJs = $isEnabled ? 'true' : 'false';
                                     utilsScript: '{$getUrlJs}',
                                     nationalMode: true
                                 });
-                                $phoneEl.removeAttr('placeholder');
+                                \$phoneEl.removeAttr('placeholder');
                             }
                         } catch (e) {
                             console.error('intlTelInput shipping init error:', e);
@@ -225,8 +225,8 @@ $isFlagEnabledJs = $isEnabled ? 'true' : 'false';
 
                         var lastSyncedCountry = initCountry;
                         var syncCountryTimer = setInterval(function () {
-                            var $countrySelect = jQuery('.form-shipping-address select[name="country_id"], select[name="country_id"]');
-                            var currentSelectVal = ($countrySelect.val() || $countrySelect.find('option:selected').val() || '').toLowerCase();
+                            var \$countrySelect = jQuery('.form-shipping-address select[name="country_id"], select[name="country_id"]');
+                            var currentSelectVal = (\$countrySelect.val() || \$countrySelect.find('option:selected').val() || '').toLowerCase();
                             if (currentSelectVal && currentSelectVal !== lastSyncedCountry) {
                                 lastSyncedCountry = currentSelectVal;
                                 try {
@@ -249,9 +249,9 @@ $isFlagEnabledJs = $isEnabled ? 'true' : 'false';
                         jQuery(document).on('countrychange', int_phone_input_element, function(e, countryData) {
                             if (countryData && countryData.iso2) {
                                 lastSyncedCountry = countryData.iso2.toLowerCase();
-                                var $countrySelect = jQuery('.form-shipping-address select[name="country_id"], select[name="country_id"]');
-                                if ($countrySelect.length && ($countrySelect.val() || '').toLowerCase() !== lastSyncedCountry) {
-                                    $countrySelect.val(countryData.iso2.toUpperCase()).trigger('change');
+                                var \$countrySelect = jQuery('.form-shipping-address select[name="country_id"], select[name="country_id"]');
+                                if (\$countrySelect.length && (\$countrySelect.val() || '').toLowerCase() !== lastSyncedCountry) {
+                                    \$countrySelect.val(countryData.iso2.toUpperCase()).trigger('change');
                                 }
                             }
                         });
