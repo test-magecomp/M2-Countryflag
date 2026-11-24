@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <css src="Magecomp_Countryflag::css/intlTelInput.css"/>
+    </head>
+    <body>
+        <referenceContainer name="after.body.start">
+            <block name="magecomp_countryflag.admin.phoneinput"
+                   class="Magecomp\Countryflag\Block\IntPhoneInput"
+                   template="Magecomp_Countryflag::phoneInputAdmin.phtml"
+                   ifconfig="countryflag/general/enable"/>
+        </referenceContainer>
+    </body>
+</page>

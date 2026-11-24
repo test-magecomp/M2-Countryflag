@@ -88,10 +88,6 @@ class Flag implements FlagInterface
                     $countryCodesToLoad = array_map('strtoupper', $availableCountries);
                 } else {
                     $countryCodesToLoad = $this->allowedcountries->getAllowedCountries();
-                    if (!empty($blockedCountries)) {
-                        $blockedUpper = array_map('strtoupper', $blockedCountries);
-                        $countryCodesToLoad = array_values(array_diff($countryCodesToLoad, $blockedUpper));
-                    }
                 }
 
                 $pinnedItems = [];
@@ -100,10 +96,6 @@ class Flag implements FlagInterface
                 foreach ($countryCodesToLoad as $countryCode) {
                     $countryCodeUpper = strtoupper((string)$countryCode);
                     $countryCodeLower = strtolower((string)$countryCode);
-
-                    if (in_array($countryCodeLower, $blockedCountries, true)) {
-                        continue;
-                    }
 
                     if ($countryCodeUpper && isset($countrydialcode[$countryCodeUpper])) {
                         $countryModel = $this->countryFactory->create()->loadByCode($countryCodeUpper);
@@ -115,6 +107,9 @@ class Flag implements FlagInterface
 
                         $isPinned = in_array($countryCodeLower, $pinnedCountries, true);
                         $countryItem->setIsPinned($isPinned);
+
+                        $isBlocked = in_array($countryCodeLower, $blockedCountries, true);
+                        $countryItem->setIsBlocked($isBlocked);
 
                         if ($isPinned) {
                             $pinnedItems[$countryCodeLower] = $countryItem;

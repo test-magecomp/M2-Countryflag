@@ -119,7 +119,7 @@ require(['jquery', 'jquery/ui'], function ($) {
             }
         },
         _generateMarkup: function () {
-            this.telInput.attr("autocomplete", "off");
+            if (this.telInput && this.telInput[0]) { this.telInput[0].autocomplete = "off"; }
             var parentClass = "intl-tel-input";
             if (this.options.allowDropdown) {
                 parentClass += " allow-dropdown";
@@ -162,12 +162,7 @@ require(['jquery', 'jquery/ui'], function ($) {
                     "class": "search-box"
                 }).appendTo(this.countryList);
 
-                this.searchInput = $("<input>", {
-                    "type": "search",
-                    "class": "country-search-input",
-                    "placeholder": "Search...",
-                    "autocomplete": "off"
-                }).appendTo(searchBox);
+                this.searchInput = $("<input type='search' class='country-search-input' placeholder='Search...' autocomplete='off'>").appendTo(searchBox);
 
                 this.noResultsItem = $("<li>", {
                     "class": "country no-results hide",

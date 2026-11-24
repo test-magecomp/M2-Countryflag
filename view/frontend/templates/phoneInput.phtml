@@ -224,35 +224,11 @@ $isFlagEnabledJs = $isEnabled ? 'true' : 'false';
                         }
 
                         var lastSyncedCountry = initCountry;
-                        var syncCountryTimer = setInterval(function () {
-                            var \$countrySelect = jQuery('.form-shipping-address select[name="country_id"], select[name="country_id"]');
-                            var currentSelectVal = (\$countrySelect.val() || \$countrySelect.find('option:selected').val() || '').toLowerCase();
-                            if (currentSelectVal && currentSelectVal !== lastSyncedCountry) {
-                                lastSyncedCountry = currentSelectVal;
-                                try {
-                                    jQuery(int_phone_input_element).intlTelInput('setCountry', currentSelectVal);
-                                } catch (e) {}
-                            }
-                        }, 250);
-                        setTimeout(function() { clearInterval(syncCountryTimer); }, 10000);
-
-                        jQuery(document).on('change', '.form-shipping-address select[name="country_id"], select[name="country_id"]', function() {
-                            var selectedCode = jQuery(this).val();
-                            if (selectedCode && typeof selectedCode === 'string' && selectedCode.trim() !== '') {
-                                lastSyncedCountry = selectedCode.toLowerCase();
-                                try {
-                                    jQuery(int_phone_input_element).intlTelInput('setCountry', selectedCode.toLowerCase());
-                                } catch (e) {}
-                            }
-                        });
 
                         jQuery(document).on('countrychange', int_phone_input_element, function(e, countryData) {
                             if (countryData && countryData.iso2) {
                                 lastSyncedCountry = countryData.iso2.toLowerCase();
-                                var \$countrySelect = jQuery('.form-shipping-address select[name="country_id"], select[name="country_id"]');
-                                if (\$countrySelect.length && (\$countrySelect.val() || '').toLowerCase() !== lastSyncedCountry) {
-                                    \$countrySelect.val(countryData.iso2.toUpperCase()).trigger('change');
-                                }
+                                // Do not alter the shipping address country dropdown when the phone flag is changed
                             }
                         });
 
@@ -374,15 +350,6 @@ $isFlagEnabledJs = $isEnabled ? 'true' : 'false';
                         } catch (e) {
                             console.error('intlTelInput billing init error:', e);
                         }
-
-                        jQuery(document).on('change', '.billing-address-form select[name="country_id"]', function() {
-                            var selectedCode = jQuery(this).val();
-                            if (selectedCode && typeof selectedCode === 'string' && selectedCode.trim() !== '') {
-                                try {
-                                    jQuery(".billing-address-form input[name='telephone']").intlTelInput('setCountry', selectedCode.toLowerCase());
-                                } catch (e) {}
-                            }
-                        });
 
                         var countrycodeval = getDialCode(".billing-address-form");
                         

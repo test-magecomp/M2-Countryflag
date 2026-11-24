@@ -1,0 +1,21 @@
+<?php
+/** @var \Magecomp\Countryflag\Block\IntPhoneInput $block */
+/** @var \Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer */
+
+if (!$block->isEnabled()) {
+    return;
+}
+
+$config = [
+    'pinnedCountries' => array_values(json_decode((string)$block->getPinnedCountriesJson(), true) ?: []),
+    'availableCountries' => array_values(json_decode((string)$block->getAvailableCountriesJson(), true) ?: []),
+    'defaultCountry' => strtolower((string)$block->getInitialCountry() ?: ($block->getDetectByIp() && $block->getCustomerIPDetails() ? $block->getCustomerIPDetails() : $block->getDefualtCountry()) ?: 'us'),
+    'utilsScriptUrl' => (string)$block->getViewFileUrl('Magecomp_Countryflag::js/utils.js'),
+    'validationRules' => json_decode((string)$block->getMobileCountryValidation(), true) ?: [],
+    'countryCodes' => json_decode((string)$block->getCountryData(), true) ?: []
+];
+
+$configJson = json_encode($config, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+$scriptString = "require(['Magecomp_Countryflag/js/phoneInputAdmin'], function(phoneInputAdmin) { phoneInputAdmin({$configJson}); });";
+?>
+<?= /* @noEscape */ $secureRenderer->renderTag('script', [], $scriptString, false) ?>

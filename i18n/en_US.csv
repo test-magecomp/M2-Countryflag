@@ -6,6 +6,7 @@ Add,Add
 "Enter Number Without Country code & without any sign. e.g:-(99xxxxxx09)","Enter Number Without Country code & without any sign. e.g:-(99xxxxxx09)"
 "For Order Updates.","For Order Updates."
 "'Error updating phone number: ' .","'Error updating phone number: ' ."
+"'Error processing telephone number: ' .","'Error processing telephone number: ' ."
 "* Required Fields","* Required Fields"
 "Contact Information","Contact Information"
 Address,Address
@@ -21,8 +22,13 @@ City,City
 "This is a required field.","This is a required field."
 "Please, Enter Valid Mobile Number.","Please, Enter Valid Mobile Number."
 "Something went wrong, Try again later.","Something went wrong, Try again later."
+"Please enter a valid mobile number.","Please enter a valid mobile number."
 "International Telephone Input","International Telephone Input"
 Configuration,Configuration
+"Pinned Countries","Pinned Countries"
+"Select countries to pin at the top of the country flag dropdown.","Select countries to pin at the top of the country flag dropdown."
+"Blocked Countries","Blocked Countries"
+"Select countries to block/exclude from the country flag dropdown.","Select countries to block/exclude from the country flag dropdown."
 "Set country automatically","Set country automatically"
 "Using client IP address","Using client IP address"
 "Phone Number Digit Validation","Phone Number Digit Validation"

@@ -16,7 +16,7 @@
                 </field>
                 <field id="enable_contact" type="select" sortOrder="15" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Enable for Contact Us Form</label>
-                    <source_model>Magento\Config\Model\Config\Source\Enabledisable</source_model>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
                 <field id="pinned_countries" translate="label comment" type="multiselect" sortOrder="25" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Pinned Countries</label>
