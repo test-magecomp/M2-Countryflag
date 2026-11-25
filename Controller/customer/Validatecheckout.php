@@ -31,6 +31,9 @@ class Validatecheckout extends \Magento\Framework\App\Action\Action
             $moblenght = (int)$this->getRequest()->getParam('mobilelength');
 
             $validate = $this->helperdata->getCountryvalidation($countrycode);
+            if ($validate === false && !empty($country_id)) {
+                $validate = $this->helperdata->getCountryvalidation($country_id);
+            }
 
             if ($validate !== false && $moblenght !== (int)$validate) {
                 $jsonResult->setData([

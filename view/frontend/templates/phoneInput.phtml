@@ -78,16 +78,17 @@ $isFlagEnabledJs = $isEnabled ? 'true' : 'false';
 
             function getCountryCode(scope) {
                 var \$parent = scope ? jQuery(scope) : jQuery('body');
-
-                var \$active = \$parent.find('.country-list > .active, .country-list > .country.active, .country-list > .iti__active');
-                if (!\$active.length) {
-                    \$active = jQuery('.iti-container .country-list > .active, .iti-container .country-list > .country.active, body > .country-list > .active');
+                var \$phoneInput = \$parent.find(int_phone_input_element);
+                if (!\$phoneInput.length) {
+                    \$phoneInput = jQuery(int_phone_input_element);
                 }
-                if (!\$active.length) {
-                    \$active = jQuery('.country-list > .active, .country-list > .country.active, .iti__country.iti__active');
-                }
-                if (\$active.length && \$active.attr('data-country-code')) {
-                    return \$active.attr('data-country-code').toLowerCase();
+                if (\$phoneInput.length && \$phoneInput.data('plugin_intlTelInput')) {
+                    try {
+                        var countryData = \$phoneInput.intlTelInput('getSelectedCountryData');
+                        if (countryData && countryData.iso2) {
+                            return countryData.iso2.toLowerCase();
+                        }
+                    } catch (e) {}
                 }
 
                 var \$flag = \$parent.find('.selected-flag .iti-flag, .selected-flag .flag, .iti__selected-flag .iti__flag');
@@ -102,6 +103,17 @@ $isFlagEnabledJs = $isEnabled ? 'true' : 'false';
                             return cls.toLowerCase();
                         }
                     }
+                }
+
+                var \$active = \$parent.find('.country-list > .active, .country-list > .country.active, .country-list > .iti__active');
+                if (!\$active.length) {
+                    \$active = jQuery('.iti-container .country-list > .active, .iti-container .country-list > .country.active, body > .country-list > .active');
+                }
+                if (!\$active.length) {
+                    \$active = jQuery('.country-list > .active, .country-list > .country.active, .iti__country.iti__active');
+                }
+                if (\$active.length && \$active.attr('data-country-code')) {
+                    return \$active.attr('data-country-code').toLowerCase();
                 }
 
                 return '';
@@ -257,11 +269,14 @@ $isFlagEnabledJs = $isEnabled ? 'true' : 'false';
 
                             jQuery(".form-shipping-address input[name='telephone']").removeClass('minimum-length-' + validate);
 
-                            if (validate != mobilenumber.length && validate != false) {
+                            if (validate != false) {
                                 jQuery(".form-shipping-address input[name='telephone']").attr('maxlength', validate);
-                                jQuery(".form-shipping-address input[name='telephone']").attr('class', 'mobnumber mage-error minimum-length-' + validate);
-                            }
-                            if (validate == false) {
+                                if (mobile.length != validate) {
+                                    jQuery(".form-shipping-address input[name='telephone']").addClass('mage-error minimum-length-' + validate);
+                                } else {
+                                    jQuery(".form-shipping-address input[name='telephone']").removeClass('mage-error');
+                                }
+                            } else {
                                 jQuery(".form-shipping-address input[name='telephone']").removeAttr('maxlength');
                                 jQuery(".form-shipping-address input[name='telephone']").addClass('minimum-length-8');
                             } 
@@ -275,6 +290,7 @@ $isFlagEnabledJs = $isEnabled ? 'true' : 'false';
                             }
                             if (!$.isNumeric(mobile) || mobile.substring(0,1) == '+' || mobile.substring(0,1) == '-' || mobile.indexOf(' ') !== -1 || /[^a-zA-Z0-9]/.test(mobile)) {
                                 temp = false;
+                                jQuery(".form-shipping-address input[name='telephone']").addClass('mage-error');
                                 jQuery(".form-shipping-address .field-tooltip + .field-note").css('color', 'red');
                                 jQuery(".form-shipping-address .field-tooltip + .field-note").text('Please, Enter Valid Mobile Number.');
                                 jQuery(".checkout-payment-method.submit .payment-methods .actions-toolbar .action.primary.checkout").prop('disabled', true);
@@ -295,12 +311,14 @@ $isFlagEnabledJs = $isEnabled ? 'true' : 'false';
                                             jQuery(".modal-inner-wrap .modal-footer .action-save-address").prop('disabled', false);
                                             jQuery("#checkout-step-shipping_method .primary .button").prop('disabled', false);
                                             jQuery(".checkout-payment-method.submit .payment-methods .actions-toolbar .action.primary.checkout").prop('disabled', false);
+                                            jQuery(".form-shipping-address input[name='telephone']").removeClass('mage-error');
                                             $(".form-shipping-address .field-note").css('color', 'black');
                                             $(".form-shipping-address .field-note").text('');
                                         } else {
                                             jQuery(".modal-inner-wrap .modal-footer .action-save-address").prop('disabled', true);
                                             jQuery("#checkout-step-shipping_method .primary .button").prop('disabled', true);
                                             jQuery(".checkout-payment-method.submit .payment-methods .actions-toolbar .action.primary.checkout").prop('disabled', true);
+                                            jQuery(".form-shipping-address input[name='telephone']").addClass('mage-error');
                                             $(".form-shipping-address .field-note").css('color', 'red');
                                             if (data && data.message) {
                                                 $(".form-shipping-address .field-note").text(data.message);
@@ -308,6 +326,7 @@ $isFlagEnabledJs = $isEnabled ? 'true' : 'false';
                                         }
                                     },
                                     error: function(data) {
+                                        jQuery(".form-shipping-address input[name='telephone']").addClass('mage-error');
                                         $(".form-shipping-address .field-note").css('color', 'red');
                                         $(".form-shipping-address .field-note").text($.mage.__('Something went wrong, Try again later.'));
                                         jQuery("#checkout-step-shipping_method .primary .button").prop('disabled', true);
@@ -377,11 +396,14 @@ $isFlagEnabledJs = $isEnabled ? 'true' : 'false';
 
                             jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").removeClass('minimum-length-' + validate);
 
-                            if (validate != mobilenumber.length && validate != false) {
+                            if (validate != false) {
                                 jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").attr('maxlength', validate);
-                                jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").attr('class', 'mobnumber mage-error minimum-length-' + validate);
-                            }
-                            if (validate == false) {
+                                if (mobile.length != validate) {
+                                    jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").addClass('mage-error minimum-length-' + validate);
+                                } else {
+                                    jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").removeClass('mage-error');
+                                }
+                            } else {
                                 jQuery(".form-shipping-address input[name='telephone']").removeAttr('maxlength');
                                 jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").addClass('minimum-length-8');
                             } 
@@ -418,10 +440,12 @@ $isFlagEnabledJs = $isEnabled ? 'true' : 'false';
                                     success: function(data) {
                                         if (data && (data.validate === true || data.validate === "true")) {
                                             jQuery("._active .checkout-billing-address .primary .action-update").prop('disabled', false);
+                                            jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").removeClass('mage-error');
                                             $("._active .checkout-billing-address .billing-address-form .field-tooltip + .field-note").css('color', 'black');
                                             $("._active .checkout-billing-address .billing-address-form .field-tooltip + .field-note").text('');
                                         } else {
                                             jQuery("._active .checkout-billing-address .primary .action-update").prop('disabled', true);
+                                            jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").addClass('mage-error');
                                             $("._active .checkout-billing-address .billing-address-form .field-tooltip + .field-note").css('color', 'red');
                                             if (data && data.message) {
                                                 $("._active .checkout-billing-address .billing-address-form .field-tooltip + .field-note").text(data.message);
@@ -429,6 +453,7 @@ $isFlagEnabledJs = $isEnabled ? 'true' : 'false';
                                         }
                                     },
                                     error: function(data) {
+                                        jQuery("._active .checkout-billing-address .billing-address-form input[name='telephone']").addClass('mage-error');
                                         $("._active .checkout-billing-address .billing-address-form .field-tooltip + .field-note").css('color', 'red');
                                         $("._active .checkout-billing-address .billing-address-form .field-tooltip + .field-note").text($.mage.__('Something went wrong, Try again later.'));
                                         jQuery("._active .checkout-billing-address .primary .action-update").prop('disabled', true);
