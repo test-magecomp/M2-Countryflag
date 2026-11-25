@@ -1,10 +1,15 @@
 define([
     'jquery',
     'Magecomp_Countryflag/js/intlTelInput.min',
+    'Magecomp_Countryflag/js/utils',
     'jquery/validate',
     'mage/validation'
-], function($) {
+], function($, intlTelInput, intlTelInputUtilsModule) {
     'use strict';
+
+    if (intlTelInputUtilsModule && typeof window.intlTelInputUtils === 'undefined') {
+        window.intlTelInputUtils = intlTelInputUtilsModule;
+    }
 
     return function(config) {
         if (window.magecompCountryflagAdminBooted) {
@@ -168,6 +173,110 @@ define([
                 return availableCountries[0].toLowerCase();
             }
             return 'us';
+        }
+
+        function getDynamicPlaceholder(iso2) {
+            var iso = (iso2 || 'us').toLowerCase();
+
+            // When separateDialCode is active, intl-tel-input displays national number without dial code.
+            // Using nationalMode=false returns "+<dialCode> <nationalFormattedNumber>".
+            // Stripping the leading "+<dialCode> " produces the clean, official formatted local placeholder!
+            if (typeof window.intlTelInputUtils !== 'undefined') {
+                try {
+                    var exIntl = window.intlTelInputUtils.getExampleNumber(
+                        iso,
+                        false, // international format
+                        window.intlTelInputUtils.numberType.MOBILE
+                    );
+                    if (!exIntl) {
+                        exIntl = window.intlTelInputUtils.getExampleNumber(
+                            iso,
+                            false,
+                            window.intlTelInputUtils.numberType.FIXED_LINE
+                        );
+                    }
+                    if (exIntl) {
+                        var cleanFormatted = exIntl.replace(/^\+\d+[\s-]*/, '').trim();
+                        if (cleanFormatted) {
+                            return cleanFormatted;
+                        }
+                    }
+
+                    // Fallback to national format if international format did not yield number
+                    var exNat = window.intlTelInputUtils.getExampleNumber(
+                        iso,
+                        true, // national format
+                        window.intlTelInputUtils.numberType.MOBILE
+                    );
+                    if (exNat) {
+                        return exNat.replace(/^0\s*/, '').trim();
+                    }
+                } catch (e) {}
+            }
+
+            // Real country-specific fallback formats
+            var countryFallbacks = {
+                'ye': '712 345 678',
+                'us': '(201) 555-0123',
+                'ca': '(201) 555-0123',
+                'in': '81234 56789',
+                'gb': '7400 123456',
+                'au': '412 345 678',
+                'ae': '50 123 4567',
+                'sa': '51 234 5678',
+                'de': '1512 3456789',
+                'fr': '6 12 34 56 78',
+                'nz': '21 123 4567',
+                'za': '71 123 4567',
+                'tk': '7290',
+                'tl': '7721 2345',
+                'br': '11 96123-4567',
+                'ru': '912 345-67-89',
+                'it': '312 345 6789',
+                'es': '612 34 56 78',
+                'mx': '1 222 123 4567',
+                'pk': '301 2345678',
+                'bd': '1812-345678',
+                'ph': '912 345 6789',
+                'id': '812-345-678',
+                'sg': '8123 4567',
+                'my': '12-345 6789',
+                'jp': '90-1234-5678',
+                'cn': '131 2345 6789'
+            };
+
+            if (countryFallbacks[iso]) {
+                return countryFallbacks[iso];
+            }
+
+            var digits = getRequiredDigits(iso) || 10;
+            var sample = '712345678901234'.substring(0, digits);
+            if (sample.length === 10) {
+                return sample.substring(0, 5) + ' ' + sample.substring(5);
+            } else if (sample.length === 9) {
+                return sample.substring(0, 3) + ' ' + sample.substring(3, 6) + ' ' + sample.substring(6);
+            } else if (sample.length === 8) {
+                return sample.substring(0, 4) + ' ' + sample.substring(4);
+            }
+            return sample;
+        }
+
+        function applyDynamicPlaceholder($phone, iso2) {
+            if (!$phone || !$phone.length) {
+                return;
+            }
+            var targetIso = iso2;
+            if (!targetIso && $phone.data('plugin_intlTelInput')) {
+                var cData = $phone.intlTelInput('getSelectedCountryData');
+                if (cData && cData.iso2) {
+                    targetIso = cData.iso2;
+                }
+            }
+            targetIso = (targetIso || 'us').toLowerCase();
+            var ph = getDynamicPlaceholder(targetIso);
+            if (ph) {
+                $phone.attr('placeholder', ph);
+            }
         }
 
         function findTargetInputs() {
@@ -342,22 +451,7 @@ define([
                 $phone.attr('maxlength', reqDigits);
             }
 
-            if (typeof intlTelInputUtils !== 'undefined') {
-                if (targetIso === 'in') {
-                    $phone.attr('placeholder', '98123 45678');
-                } else {
-                    var exR = intlTelInputUtils.getExampleNumber(targetIso, true, intlTelInputUtils.numberType.MOBILE);
-                    if (exR) {
-                        var dOnlyR = exR.replace(/\D/g, '');
-                        if (reqDigits && dOnlyR.length > reqDigits && dOnlyR.charAt(0) === '0') {
-                            exR = exR.replace(/^0\s*/, '');
-                        }
-                        $phone.attr('placeholder', exR);
-                    }
-                }
-            } else if (targetIso === 'in') {
-                $phone.attr('placeholder', '98123 45678');
-            }
+            applyDynamicPlaceholder($phone, targetIso);
         }
 
         function initPhoneField(inputEl) {
@@ -387,18 +481,7 @@ define([
                 autoPlaceholder: 'polite',
                 customPlaceholder: function(selectedCountryPlaceholder, selectedCountryData) {
                     var cIso = (selectedCountryData && selectedCountryData.iso2) ? selectedCountryData.iso2.toLowerCase() : '';
-                    if (cIso === 'in') {
-                        return '98123 45678';
-                    }
-                    if (selectedCountryPlaceholder) {
-                        var req = getRequiredDigits(cIso);
-                        var dOnly = selectedCountryPlaceholder.replace(/\D/g, '');
-                        if (req && dOnly.length > req && dOnly.charAt(0) === '0') {
-                            return selectedCountryPlaceholder.replace(/^0\s*/, '');
-                        }
-                        return selectedCountryPlaceholder;
-                    }
-                    return '';
+                    return getDynamicPlaceholder(cIso);
                 },
                 utilsScript: utilsScriptUrl
             };
@@ -455,22 +538,7 @@ define([
                 $phone.attr('maxlength', reqDigits);
             }
 
-            if (typeof intlTelInputUtils !== 'undefined') {
-                if (finalIso === 'in') {
-                    $phone.attr('placeholder', '98123 45678');
-                } else {
-                    var ex = intlTelInputUtils.getExampleNumber(finalIso, true, intlTelInputUtils.numberType.MOBILE);
-                    if (ex) {
-                        var dOnly = ex.replace(/\D/g, '');
-                        if (reqDigits && dOnly.length > reqDigits && dOnly.charAt(0) === '0') {
-                            ex = ex.replace(/^0\s*/, '');
-                        }
-                        $phone.attr('placeholder', ex);
-                    }
-                }
-            } else if (finalIso === 'in') {
-                $phone.attr('placeholder', '98123 45678');
-            }
+            applyDynamicPlaceholder($phone, finalIso);
 
             // Flag change updates validation and maxlength (without changing address country)
             $phone.off('countrychange.iti_sync').on('countrychange.iti_sync', function(e, countryData) {
@@ -482,22 +550,7 @@ define([
                     } else {
                         $phone.removeAttr('maxlength');
                     }
-                    if (typeof intlTelInputUtils !== 'undefined') {
-                        if (newIso === 'in') {
-                            $phone.attr('placeholder', '98123 45678');
-                        } else {
-                            var ex2 = intlTelInputUtils.getExampleNumber(newIso, true, intlTelInputUtils.numberType.MOBILE);
-                            if (ex2) {
-                                var dOnly2 = ex2.replace(/\D/g, '');
-                                if (newReq && dOnly2.length > newReq && dOnly2.charAt(0) === '0') {
-                                    ex2 = ex2.replace(/^0\s*/, '');
-                                }
-                                $phone.attr('placeholder', ex2);
-                            }
-                        }
-                    } else if (newIso === 'in') {
-                        $phone.attr('placeholder', '98123 45678');
-                    }
+                    applyDynamicPlaceholder($phone, newIso);
                     validateSinglePhone($phone);
                 }
             });
@@ -928,6 +981,28 @@ define([
 
         $(document).ready(function() {
             initAllPhones();
+
+            // Watch for intlTelInputUtils to load and update placeholders dynamically
+            var utilsCheckCount = 0;
+            var utilsCheckInterval = setInterval(function() {
+                utilsCheckCount++;
+                if (typeof window.intlTelInputUtils !== 'undefined') {
+                    clearInterval(utilsCheckInterval);
+                    findTargetInputs().each(function() {
+                        var $p = $(this);
+                        if ($p.data('plugin_intlTelInput')) {
+                            var cData = $p.intlTelInput('getSelectedCountryData');
+                            var cIso = (cData && cData.iso2) ? cData.iso2 : '';
+                            if (cIso) {
+                                applyDynamicPlaceholder($p, cIso);
+                            }
+                        }
+                    });
+                }
+                if (utilsCheckCount >= 50) {
+                    clearInterval(utilsCheckInterval);
+                }
+            }, 200);
 
             var counter = 0;
             var interval = setInterval(function() {

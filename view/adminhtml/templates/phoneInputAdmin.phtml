@@ -6,11 +6,22 @@ if (!$block->isEnabled()) {
     return;
 }
 
+$utilsUrl = '';
+try {
+    $utilsUrl = (string)$block->getViewFileUrl('Magecomp_Countryflag::js/utils.js', [
+        'area' => 'adminhtml',
+        'theme' => 'Magento/backend',
+        'locale' => 'en_US'
+    ]);
+} catch (\Exception $e) {
+    $utilsUrl = (string)$block->getViewFileUrl('Magecomp_Countryflag::js/utils.js');
+}
+
 $config = [
     'pinnedCountries' => array_values(json_decode((string)$block->getPinnedCountriesJson(), true) ?: []),
     'availableCountries' => array_values(json_decode((string)$block->getAvailableCountriesJson(), true) ?: []),
     'defaultCountry' => strtolower((string)$block->getInitialCountry() ?: ($block->getDetectByIp() && $block->getCustomerIPDetails() ? $block->getCustomerIPDetails() : $block->getDefualtCountry()) ?: 'us'),
-    'utilsScriptUrl' => (string)$block->getViewFileUrl('Magecomp_Countryflag::js/utils.js'),
+    'utilsScriptUrl' => $utilsUrl,
     'validationRules' => json_decode((string)$block->getMobileCountryValidation(), true) ?: [],
     'countryCodes' => json_decode((string)$block->getCountryData(), true) ?: []
 ];
