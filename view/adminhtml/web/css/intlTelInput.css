@@ -1823,7 +1823,30 @@ only screen and (min-resolution: 2dppx) {
     display: block;
 }
 
-/* Ensure search box is never displayed on Admin side */
 .intl-tel-input .country-list .search-box {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #fff;
+    padding: 8px 10px;
+    border-bottom: 1px solid #e5e7eb;
+    margin: 0;
+    box-sizing: border-box;
+    width: 100% !important;
+    display: block !important;
+}
+
+/* Disabled styling when shipping is same as billing or input is disabled */
+.intl-tel-input.iti-disabled .selected-flag,
+.intl-tel-input:has(input:disabled) .selected-flag,
+.intl-tel-input input:disabled ~ .flag-container .selected-flag {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+    opacity: 0.65 !important;
+    background-color: transparent !important;
+}
+
+.intl-tel-input.iti-disabled .country-list,
+.intl-tel-input:has(input:disabled) .country-list {
     display: none !important;
 }

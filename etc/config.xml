@@ -5,8 +5,8 @@
 			<general>
 				<enable>0</enable>
 				<enable_contact>0</enable_contact>
-				<pinned_countries></pinned_countries>
-				<blocked_countries></blocked_countries>
+				<pinned_countries>US,GB</pinned_countries>
+				<blocked_countries>KP,IR</blocked_countries>
 				<detect_by_ip>0</detect_by_ip>
 			</general>
         </countryflag>

@@ -646,6 +646,38 @@ define([
             return allValid;
         }
 
+        function updateShippingSameAsBillingState() {
+            var $sameAsBilling = $('#order-shipping_same_as_billing');
+            var isChecked = $sameAsBilling.length && $sameAsBilling.is(':checked');
+
+            var $bPhone = $('#order-billing_address_telephone');
+            var $sPhone = $('#order-shipping_address_telephone');
+            var $sContainer = $sPhone.closest('.intl-tel-input');
+
+            if (isChecked) {
+                if ($bPhone.data('plugin_intlTelInput') && $sPhone.data('plugin_intlTelInput')) {
+                    var bCountry = $bPhone.intlTelInput('getSelectedCountryData');
+                    if (bCountry && bCountry.iso2) {
+                        $sPhone.intlTelInput('setCountry', bCountry.iso2);
+                    }
+                    $sPhone.val($bPhone.val());
+                    validateSinglePhone($sPhone);
+                }
+                if ($sContainer.length) {
+                    $sContainer.addClass('iti-disabled');
+                    $sContainer.find('.country-list').addClass('hide');
+                    $sContainer.find('.selected-flag').attr('tabindex', '-1');
+                    $sContainer.find('.selected-flag .iti-arrow').removeClass('up');
+                }
+                $sPhone.prop('disabled', true);
+            } else {
+                if ($sContainer.length) {
+                    $sContainer.removeClass('iti-disabled');
+                    $sContainer.find('.selected-flag').attr('tabindex', '0');
+                }
+            }
+        }
+
         function ensureOrderHooks() {
             if (!window.order) {
                 return;
@@ -705,24 +737,21 @@ define([
                 window.order.dataShow._itiWrapped = true;
             }
 
+            if (typeof window.order.disableShippingAddress === 'function' && !window.order.disableShippingAddress._itiWrapped) {
+                var origDisableShipping = window.order.disableShippingAddress;
+                window.order.disableShippingAddress = function(flag) {
+                    var res = origDisableShipping.apply(this, arguments);
+                    updateShippingSameAsBillingState();
+                    return res;
+                };
+                window.order.disableShippingAddress._itiWrapped = true;
+            }
+
             if (typeof window.order.setShippingAsBilling === 'function' && !window.order.setShippingAsBilling._itiWrapped) {
                 var origShippingAsBilling = window.order.setShippingAsBilling;
                 window.order.setShippingAsBilling = function(flag) {
                     var res = origShippingAsBilling.apply(this, arguments);
-                    if (flag) {
-                        setTimeout(function() {
-                            var $bPhone = $('#order-billing_address_telephone');
-                            var $sPhone = $('#order-shipping_address_telephone');
-                            if ($bPhone.data('plugin_intlTelInput') && $sPhone.data('plugin_intlTelInput')) {
-                                var bData = $bPhone.intlTelInput('getSelectedCountryData');
-                                if (bData && bData.iso2) {
-                                    $sPhone.intlTelInput('setCountry', bData.iso2);
-                                }
-                                $sPhone.val($bPhone.val());
-                                validateSinglePhone($sPhone);
-                            }
-                        }, 50);
-                    }
+                    updateShippingSameAsBillingState();
                     return res;
                 };
                 window.order.setShippingAsBilling._itiWrapped = true;
@@ -746,6 +775,7 @@ define([
             findTargetInputs().each(function() {
                 initPhoneField(this);
             });
+            updateShippingSameAsBillingState();
         }
 
         // Custom validation method
@@ -819,19 +849,24 @@ define([
 
         // Handle Order "Same As Billing" checkbox
         $(document).on('change', '#order-shipping_same_as_billing', function() {
-            if ($(this).is(':checked')) {
-                setTimeout(function() {
-                    var $bPhone = $('#order-billing_address_telephone');
-                    var $sPhone = $('#order-shipping_address_telephone');
-                    if ($bPhone.data('plugin_intlTelInput') && $sPhone.data('plugin_intlTelInput')) {
-                        var bCountry = $bPhone.intlTelInput('getSelectedCountryData');
-                        if (bCountry && bCountry.iso2) {
-                            $sPhone.intlTelInput('setCountry', bCountry.iso2);
-                        }
-                        $sPhone.val($bPhone.val());
-                        validateSinglePhone($sPhone);
-                    }
-                }, 50);
+            updateShippingSameAsBillingState();
+            setTimeout(updateShippingSameAsBillingState, 100);
+            setTimeout(updateShippingSameAsBillingState, 300);
+        });
+
+        // Sync billing changes to shipping when "Same As Billing" is checked
+        $(document).on('countrychange', '#order-billing_address_telephone', function(e, countryData) {
+            if ($('#order-shipping_same_as_billing').is(':checked')) {
+                updateShippingSameAsBillingState();
+            }
+        });
+        $(document).on('input change keyup', '#order-billing_address_telephone', function() {
+            if ($('#order-shipping_same_as_billing').is(':checked')) {
+                var $b = $(this);
+                var $s = $('#order-shipping_address_telephone');
+                if ($s.length) {
+                    $s.val($b.val());
+                }
             }
         });
 
@@ -912,12 +947,23 @@ define([
             observer.observe(document.body, { childList: true, subtree: true });
         }
 
-        // Ensure country dropdown opens reliably in admin forms
+        // Ensure search input inside country dropdown does not close dropdown or lose focus
+        $(document).on('click', '.intl-tel-input .search-box, .intl-tel-input .country-search-input', function(e) {
+            e.stopPropagation();
+        });
         $(document).on('click', '.intl-tel-input .selected-flag', function(e) {
             var $flag = $(this);
             var $wrapper = $flag.closest('.intl-tel-input');
-            var $list = $wrapper.find('.country-list');
             var $input = $wrapper.find('input[type="text"], input[type="tel"]').first();
+
+            // If input is disabled or wrapper is disabled (e.g. shipping same as billing), do not open dropdown
+            if ($input.is(':disabled') || $input.prop('disabled') || $wrapper.hasClass('iti-disabled')) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return false;
+            }
+
+            var $list = $wrapper.find('.country-list');
 
             $('.intl-tel-input .country-list').not($list).addClass('hide');
             $('.intl-tel-input .selected-flag .iti-arrow').not($flag.find('.iti-arrow')).removeClass('up');
